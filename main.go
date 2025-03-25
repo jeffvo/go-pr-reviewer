@@ -8,16 +8,17 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/jeffvo/go-pr-reviewer/adapters"
 	"github.com/jeffvo/go-pr-reviewer/handlers"
+	"github.com/jeffvo/go-pr-reviewer/internals/adapters"
 	"github.com/jeffvo/go-pr-reviewer/usecases"
 )
 
 func main() {
 	mux := http.NewServeMux()
 
-	githubAdapter := adapters.NewGithubAdapter("token")
-	usecase := usecases.NewWebhookProcessor(githubAdapter)
+	githubAdapter := adapters.NewGithubAdapter("")
+	geminiAdapter := adapters.NewGeminiAdapter("")
+	usecase := usecases.NewWebhookProcessor(githubAdapter, geminiAdapter)
 	webhookHandler := handlers.NewWebhookHandler(usecase)
 
 	mux.HandleFunc("/", webhookHandler.Handle)
