@@ -1,18 +1,17 @@
 package usecases
 
 import (
-	"fmt"
-
-	"github.com/jeffvo/go-pr-reviewer/adapters"
 	"github.com/jeffvo/go-pr-reviewer/internals"
+	"github.com/jeffvo/go-pr-reviewer/internals/adapters"
 )
 
 type WebhookProcessor struct {
 	githubAdapter *adapters.GithubAdapter
+	geminiAdapter *adapters.GeminiAdapter
 }
 
-func NewWebhookProcessor(githubAdapter *adapters.GithubAdapter) *WebhookProcessor {
-	return &WebhookProcessor{githubAdapter: githubAdapter}
+func NewWebhookProcessor(githubAdapter *adapters.GithubAdapter, geminiAdapter *adapters.GeminiAdapter) *WebhookProcessor {
+	return &WebhookProcessor{githubAdapter: githubAdapter, geminiAdapter: geminiAdapter}
 }
 
 func (p *WebhookProcessor) ProcessWebhook(body []byte) error {
@@ -21,8 +20,12 @@ func (p *WebhookProcessor) ProcessWebhook(body []byte) error {
 		return err
 	}
 
-	fmt.Printf("Received a webhook: %s", webHookResult)
-	p.githubAdapter.GetPullRequest(webHookResult.PullRequest.URL)
+	pullRequestFiles, err := p.githubAdapter.GetPullRequest(webHookResult.PullRequest.URL)
+	if err != nil {
+		return err
+	}
+
+	p.geminiAdapter.GetCodeSuggestions(pullRequestFiles)
 
 	return nil
 }

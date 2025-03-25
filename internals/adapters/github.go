@@ -1,7 +1,9 @@
 package adapters
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -13,12 +15,17 @@ func NewGithubAdapter(token string) *GithubAdapter {
 	return &GithubAdapter{token: token}
 }
 
-func (g *GithubAdapter) GetPullRequest(repository string) error {
+type PullRequestFiles struct {
+	Filename string `json:"filename"`
+	Patch    string `json:"patch"`
+}
+
+func (g *GithubAdapter) GetPullRequest(repository string) ([]*PullRequestFiles, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/files", repository), nil)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 
 	req.Header.Add("Accept", `application/vnd.github+json`)
@@ -27,12 +34,20 @@ func (g *GithubAdapter) GetPullRequest(repository string) error {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	fmt.Sprintf("Received a webhook: %s", resp)
+	result, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	var pullRequestInfo []*PullRequestFiles
+	if err := json.Unmarshal(result, &pullRequestInfo); err != nil {
+		return nil, fmt.Errorf("failed to parse the API request result: %w", err)
+	}
+
+	return pullRequestInfo, nil
 
 }
