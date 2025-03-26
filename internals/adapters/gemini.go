@@ -38,9 +38,13 @@ func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*PullRequestFiles)
 	model := client.GenerativeModel("gemini-1.5-flash")
 	resp, err := model.GenerateContent(ctx,
 
-		genai.Text("Could you review the following code changes? the file name will be shown first then the changes please respond in a way I can paste it as suggestions to the PR\n"+text))
+		genai.Text("Could you review the following code changes? the file name will be shown first then the changes please respond in a way I can paste it as suggestions to the PR. Could you return it in json format which is the following { startLine: int, endline:int, suggestions: string, additionalInformation: string}. In the suggestion field could you post the code suggestion that will be interperted correctly by github? \n"+text))
 
-	fmt.Sprintf("Suggestions: %v\n", resp.Candidates[0].Content.Parts)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Suggestions: %v\n", resp.Candidates[0].Content.Parts)
 
 	return nil
 }
