@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jeffvo/go-pr-reviewer/handlers"
-	"github.com/jeffvo/go-pr-reviewer/internals/adapters"
-	"github.com/jeffvo/go-pr-reviewer/usecases"
+	"github.com/jeffvo/go-pr-reviewer/internal/adapters"
+	"github.com/jeffvo/go-pr-reviewer/internal/usecases"
 )
 
 func main() {
@@ -28,7 +28,6 @@ func main() {
 		Handler: mux,
 	}
 
-	// Channel to listen for OS signals
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
@@ -39,7 +38,7 @@ func main() {
 		}
 	}()
 
-	<-stop // Wait for interrupt signal
+	<-stop
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
