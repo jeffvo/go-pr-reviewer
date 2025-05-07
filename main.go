@@ -11,13 +11,19 @@ import (
 	"github.com/jeffvo/go-pr-reviewer/handlers"
 	"github.com/jeffvo/go-pr-reviewer/internal/adapters"
 	"github.com/jeffvo/go-pr-reviewer/internal/usecases"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	mux := http.NewServeMux()
 
-	githubAdapter := adapters.NewGithubAdapter("")
-	geminiAdapter := adapters.NewGeminiAdapter("")
+	githubAdapter := adapters.NewGithubAdapter(os.Getenv("GITHUB_KEY"))
+	geminiAdapter := adapters.NewGeminiAdapter(os.Getenv("GEMINI_KEY"))
 	usecase := usecases.NewWebhookProcessor(githubAdapter, geminiAdapter)
 	webhookHandler := handlers.NewWebhookHandler(usecase)
 
