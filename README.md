@@ -23,11 +23,10 @@ Create a .env file in the cmd/api-server directory with the following tokens
 - GITHUB_KEY (your PAT token)
 - GEMINI_KEY (Your Gemini API key)
 
-Usage
-Start the server:
+## Usage
 
-Configure a GitHub webhook to send pull request events to your server endpoint.
-This is done in the settings page of the repository.
+Start the server  
+Configure a GitHub webhook to send pull request events to your server endpoint. This is done in the settings page of the repository.
 
 The server will listen on port 3000 for webhook events.
 
