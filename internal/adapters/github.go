@@ -89,10 +89,10 @@ func (g *GithubAdapter) GetPullRequestMetadata(repository string) (*entities.Pul
 	return metadata, nil
 }
 
-func (g *GithubAdapter) PostCodeSuggestions(url string, suggestions *[]entities.Suggestion, metadata *entities.PullRequestMetadata) error {
+func (g *GithubAdapter) PostCodeSuggestions(url string, suggestions []entities.Suggestion, metadata *entities.PullRequestMetadata) error {
 	client := &http.Client{}
 
-	for _, suggestion := range *suggestions {
+	for _, suggestion := range suggestions {
 		body, err := json.Marshal(suggestion.ToCommentPayload(metadata.Head.Sha))
 		if err != nil {
 			return err

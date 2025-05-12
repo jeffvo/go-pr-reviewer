@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/google/generative-ai-go/genai"
 	"github.com/jeffvo/go-pr-reviewer/domain/entities"
@@ -12,11 +12,12 @@ import (
 )
 
 type GeminiAdapter struct {
-	token string
+	token   string
+	version string
 }
 
-func NewGeminiAdapter(token string) *GeminiAdapter {
-	return &GeminiAdapter{token: token}
+func NewGeminiAdapter(token string, version string) *GeminiAdapter {
+	return &GeminiAdapter{token: token, version: version}
 }
 
 type Changes struct {
@@ -24,23 +25,23 @@ type Changes struct {
 	Changes  []string
 }
 
-func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequestChanges) (*[]entities.Suggestion, error) {
+func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequestChanges) ([]entities.Suggestion, error) {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(g.token))
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to create genai client: %w", err)
 	}
 	defer client.Close()
 
-	var text string
+	var text strings.Builder
 	for _, file := range pullRequestFiles {
-		text += fmt.Sprintf("%s\n%s", file.FileName, file.Changed)
+		fmt.Fprintf(&text, "%s\n%s", file.FileName, file.Changed)
 	}
 
-	model := client.GenerativeModel("gemini-1.5-flash")
+	model := client.GenerativeModel(g.version)
 	resp, err := model.GenerateContent(ctx,
 
-		genai.Text("Could you review the following code changes? the file name will be shown first then the changes. Could you return it in json format which is the following { startLine: int, endLine:int, suggestion: string, additionalInformation: string, fileName: string}? Please only fill the suggestion field with actual code suggestions. Also, use the additionalInformation field to explain why this code suggestion is recommended. Thank you. \n"+text))
+		genai.Text("Could you review the following code changes? the file name will be shown first then the changes. Could you return it in json format which is the following { startLine: int, endLine:int, suggestion: string, additionalInformation: string, fileName: string}? Please only fill the suggestion field with actual code suggestions. Also, use the additionalInformation field to explain why this code suggestion is recommended. Thank you. \n"+text.String()))
 
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequ
 
 	// For now I directly unmarshal the result to the PullRequestInfo struct
 	// This is done as we do not want to manipulate the data so having an extra layer feels unnecessary
-	textString := convertGeminiResponeToString(resp)
+	textString := convertGeminiResponseToString(resp)
 
 	parsedResponse, err := parseJSONResponse(textString)
 
@@ -56,10 +57,10 @@ func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequ
 		return nil, err
 	}
 
-	return &parsedResponse, nil
+	return parsedResponse, nil
 }
 
-func convertGeminiResponeToString(resp *genai.GenerateContentResponse) string {
+func convertGeminiResponseToString(resp *genai.GenerateContentResponse) string {
 	stringValue := ""
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if textPart, ok := part.(genai.Text); ok {

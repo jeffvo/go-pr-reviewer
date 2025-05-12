@@ -23,7 +23,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	githubAdapter := adapters.NewGithubAdapter(os.Getenv("GITHUB_KEY"))
-	geminiAdapter := adapters.NewGeminiAdapter(os.Getenv("GEMINI_KEY"))
+	geminiAdapter := adapters.NewGeminiAdapter(os.Getenv("GEMINI_KEY"), os.Getenv("GEMINI_VERSION"))
 	usecase := usecases.NewWebhookProcessor(githubAdapter, geminiAdapter)
 	webhookHandler := handlers.NewWebhookHandler(usecase)
 
