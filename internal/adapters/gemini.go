@@ -14,10 +14,19 @@ import (
 type GeminiAdapter struct {
 	token   string
 	version string
+	client  *genai.Client
 }
 
 func NewGeminiAdapter(token string, version string) *GeminiAdapter {
-	return &GeminiAdapter{token: token, version: version}
+	ctx := context.Background()
+	client, _ := genai.NewClient(ctx, option.WithAPIKey(token))
+	defer client.Close()
+	return &GeminiAdapter{token: token, version: version, client: client}
+}
+
+// For testing purposes
+func NewGeminiAdapterWithClient(token string, version string, client *genai.Client) *GeminiAdapter {
+	return &GeminiAdapter{token: token, version: version, client: client}
 }
 
 type Changes struct {
@@ -27,18 +36,13 @@ type Changes struct {
 
 func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequestChanges) ([]entities.Suggestion, error) {
 	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(g.token))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create genai client: %w", err)
-	}
-	defer client.Close()
 
 	var text strings.Builder
 	for _, file := range pullRequestFiles {
 		fmt.Fprintf(&text, "%s\n%s", file.FileName, file.Changed)
 	}
 
-	model := client.GenerativeModel(g.version)
+	model := g.client.GenerativeModel(g.version)
 	resp, err := model.GenerateContent(ctx,
 
 		genai.Text("Could you review the following code changes? the file name will be shown first then the changes. Could you return it in json format which is the following { startLine: int, endLine:int, suggestion: string, additionalInformation: string, fileName: string}? Please only fill the suggestion field with actual code suggestions. Also, use the additionalInformation field to explain why this code suggestion is recommended. Thank you. \n"+text.String()))
