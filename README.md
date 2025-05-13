@@ -22,6 +22,7 @@ Create a .env file in the cmd/api-server directory with the following tokens
 
 - GITHUB_KEY (your PAT token)
 - GEMINI_KEY (Your Gemini API key)
+- GEMINI_VERSION (The version of the gemini api you want to use)
 
 ## Usage
 
