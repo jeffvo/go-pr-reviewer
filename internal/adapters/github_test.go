@@ -54,7 +54,7 @@ func TestGetPullRequest(t *testing.T) {
 func TestGetPullRequestMetadata(t *testing.T) {
 	t.Run("given_valid_repository_when_getting_pull_request_metadata_then_returns_success", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "/metadata", r.URL.Path)
+			assert.Equal(t, "/", r.URL.Path)
 			assert.Equal(t, "GET", r.Method)
 			assert.Equal(t, "application/vnd.github+json", r.Header.Get("Accept"))
 			assert.Contains(t, r.Header.Get("Authorization"), "Bearer ")

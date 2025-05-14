@@ -36,7 +36,7 @@ func (g *GeminiAdapter) GetCodeSuggestions(pullRequestFiles []*entities.PullRequ
 		return nil, fmt.Errorf("failed to get suggestions from Gemini: %w", err)
 	}
 
-	parsedResponse, err := parseJSONResponse(*text)
+	parsedResponse, err := parseJSONResponse(text)
 
 	if err != nil {
 		return nil, err

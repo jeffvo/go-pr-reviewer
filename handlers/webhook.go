@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -29,13 +30,22 @@ func (wbh *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload dto.WebhookPayload
-	if err := json.Unmarshal(body, &payload); err != nil {
+	var webhook dto.WebhookPayload
+	err = json.Unmarshal([]byte(body), &webhook)
+	if err != nil {
+		fmt.Printf("Failed to unmarshal webhook: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = wbh.usecase.ProcessWebhook(payload)
+	url, err := webhook.GetPullRequestURL()
+	if err != nil {
+		fmt.Printf("Failed to get pull request URL: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = wbh.usecase.ProcessWebhook(url)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -69,6 +69,10 @@ func (g *GithubAdapter) GetPullRequestMetadata(repository string) (*entities.Pul
 	req.Header.Add("X-Github-Api-Version", "2022-11-28")
 	resp, err := client.Do(req)
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	if err != nil {
 		return nil, err
 	}

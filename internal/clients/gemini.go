@@ -11,42 +11,48 @@ import (
 )
 
 type GeminiClientInterface interface {
-	GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (*string, error)
+	GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (string, error)
 }
 
 type GeminiClient struct {
 	token   string
-	version string
-	client  *genai.Client
+	model   *genai.GenerativeModel
+	context context.Context
 }
 
 func NewGeminiClient(token string, version string) *GeminiClient {
 	ctx := context.Background()
-	client, _ := genai.NewClient(ctx, option.WithAPIKey(token))
-	defer client.Close()
-
-	return &GeminiClient{token: token, version: version}
-}
-
-func (g *GeminiClient) GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (*string, error) {
-	ctx := context.Background()
-	var text strings.Builder
-	for _, file := range pullRequestFiles {
-		fmt.Fprintf(&text, "%s\n%s", file.FileName, file.Changed)
-	}
-
-	model := g.client.GenerativeModel(g.version)
-	resp, err := model.GenerateContent(ctx,
-
-		genai.Text("Could you review the following code changes? the file name will be shown first then the changes. Could you return it in json format which is the following { startLine: int, endLine:int, suggestion: string, additionalInformation: string, fileName: string}? Please only fill the suggestion field with actual code suggestions. Also, use the additionalInformation field to explain why this code suggestion is recommended. Thank you. \n"+text.String()))
+	client, err := genai.NewClient(ctx, option.WithAPIKey(token))
 
 	if err != nil {
-		return nil, err
+		fmt.Printf("Error creating Gemini client: %v\n", err)
+		return nil
+	}
+
+	model := client.GenerativeModel(version)
+
+	return &GeminiClient{token: token, model: model, context: ctx}
+}
+
+func (g *GeminiClient) GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (string, error) {
+	var text strings.Builder
+	for _, file := range pullRequestFiles {
+		text.WriteString(fmt.Sprintf("%s\n%s", file.FileName, file.Changed))
+	}
+
+	genText := genai.Text(fmt.Sprintf("Could you review the following code changes? the file name will be shown first then the changes. Could you return it in json format which is the following { startLine: int, endLine:int, suggestion: string, additionalInformation: string, fileName: string}? Please only fill the suggestion field with actual code suggestions. Also, use the additionalInformation field to explain why this code suggestion is recommended. Thank you. \n%s", text.String()))
+
+	ctx := context.Background()
+	resp, err := g.model.GenerateContent(ctx, genText)
+
+	if err != nil {
+		fmt.Printf("Error generating content: %v\n", err)
+		return "", err
 	}
 
 	textString := convertGeminiResponseToString(resp)
 
-	return &textString, nil
+	return textString, nil
 }
 
 func convertGeminiResponseToString(resp *genai.GenerateContentResponse) string {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/jeffvo/go-pr-reviewer/domain/ports"
-	"github.com/jeffvo/go-pr-reviewer/internal/usecases/dto"
 )
 
 type WebhookProcessor struct {
@@ -16,15 +15,15 @@ func NewWebhookProcessor(githubAdapter ports.GitService, aiService ports.AIServi
 	return &WebhookProcessor{gitService: githubAdapter, aiService: aiService}
 }
 
-func (p *WebhookProcessor) ProcessWebhook(payload dto.WebhookPayload) error {
+func (p *WebhookProcessor) ProcessWebhook(url string) error {
 
-	pullRequestFiles, err := p.gitService.GetPullRequest(payload.PullRequest.URL)
+	pullRequestFiles, err := p.gitService.GetPullRequest(url)
 	if err != nil {
 		fmt.Printf("Error getting pull request: %v\n", err)
 		return err
 	}
 
-	metadata, err := p.gitService.GetPullRequestMetadata(payload.PullRequest.URL)
+	metadata, err := p.gitService.GetPullRequestMetadata(url)
 	if err != nil {
 		fmt.Printf("Error getting pull request metadata: %v\n", err)
 		return err
@@ -37,7 +36,7 @@ func (p *WebhookProcessor) ProcessWebhook(payload dto.WebhookPayload) error {
 		return err
 	}
 
-	err = p.gitService.PostCodeSuggestions(payload.PullRequest.URL, suggestions, metadata)
+	err = p.gitService.PostCodeSuggestions(url, suggestions, metadata)
 	if err != nil {
 		fmt.Printf("Error posting code suggestions: %v\n", err)
 		return err

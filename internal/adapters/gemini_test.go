@@ -14,13 +14,13 @@ type MockGeminiClient struct {
 	mock.Mock
 }
 
-func (m *MockGeminiClient) GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (*string, error) {
+func (m *MockGeminiClient) GetSuggestions(pullRequestFiles []*entities.PullRequestChanges) (string, error) {
 	args := m.Called(pullRequestFiles)
 	if args.Get(0) != nil {
 		result := args.Get(0).(string)
-		return &result, args.Error(1)
+		return result, args.Error(1)
 	}
-	return nil, args.Error(1)
+	return "", args.Error(1)
 }
 
 func TestGeminiAdapterWithMockClient(t *testing.T) {
